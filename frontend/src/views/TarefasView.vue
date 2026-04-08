@@ -1,23 +1,37 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import axios from "axios";
-import TarefaItem from '../components/TarefaItem.vue';
+import api from "@/services/api";
+import TarefaItem from "../components/TarefaItem.vue";
 
 const tarefas = ref([]);
 const novoTitulo = ref("");
 const novaDescricao = ref("");
+const loading = ref(false);
+const erro = ref("");
 
+// Carregar tarefas ao iniciar
 onMounted(() => carregarTarefas());
 
 function carregarTarefas() {
-  axios.get("http://127.0.0.1:8000/api/tarefas/")
-    .then(response => tarefas.value = response.data)
-    .catch(console.error);
+  loading.value = true;
+  erro.value = "";
+
+  api.get("tarefas/")
+    .then(response => {
+      tarefas.value = response.data;
+    })
+    .catch(() => {
+      erro.value = "Erro ao carregar tarefas";
+    })
+    .finally(() => {
+      loading.value = false;
+    });
 }
 
 function criarTarefa() {
   if (!novoTitulo.value) return alert("Digite um título!");
-  axios.post("http://127.0.0.1:8000/api/tarefas/", {
+
+  api.post("tarefas/", {
     titulo: novoTitulo.value,
     descricao: novaDescricao.value,
     concluida: false
@@ -27,21 +41,31 @@ function criarTarefa() {
     novoTitulo.value = "";
     novaDescricao.value = "";
   })
-  .catch(console.error);
+  .catch(() => {
+    erro.value = "Erro ao criar tarefa";
+  });
 }
 
 function toggleConcluida(tarefa) {
-  axios.patch(`http://127.0.0.1:8000/api/tarefas/${tarefa.id}/`, {
+  api.patch(`tarefas/${tarefa.id}/`, {
     concluida: !tarefa.concluida
   })
-  .then(response => tarefa.concluida = response.data.concluida)
-  .catch(console.error);
+  .then(response => {
+    tarefa.concluida = response.data.concluida;
+  })
+  .catch(() => {
+    erro.value = "Erro ao atualizar tarefa";
+  });
 }
 
 function deletarTarefa(tarefa) {
-  axios.delete(`http://127.0.0.1:8000/api/tarefas/${tarefa.id}/`)
-    .then(() => tarefas.value = tarefas.value.filter(t => t.id !== tarefa.id))
-    .catch(console.error);
+  api.delete(`tarefas/${tarefa.id}/`)
+    .then(() => {
+      tarefas.value = tarefas.value.filter(t => t.id !== tarefa.id);
+    })
+    .catch(() => {
+      erro.value = "Erro ao deletar tarefa";
+    });
 }
 </script>
 
@@ -49,12 +73,22 @@ function deletarTarefa(tarefa) {
   <div class="tarefas-container">
     <h1>Minhas Tarefas</h1>
 
+    <!-- Loading -->
+    <div v-if="loading">Carregando...</div>
+
+    <!-- Erro -->
+    <div v-if="erro" style="color: red; margin-bottom: 10px;">
+      {{ erro }}
+    </div>
+
+    <!-- Formulário -->
     <div class="form-tarefa">
       <input v-model="novoTitulo" placeholder="Título da tarefa" />
       <input v-model="novaDescricao" placeholder="Descrição" />
       <button @click="criarTarefa">Adicionar</button>
     </div>
 
+    <!-- Lista -->
     <ul>
       <TarefaItem
         v-for="tarefa in tarefas"
