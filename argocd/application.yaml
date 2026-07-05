@@ -1,0 +1,28 @@
+# Aplique isso no cluster DEPOIS de instalar o ArgoCD:
+#   kubectl apply -f argocd/application.yaml
+#
+# Troque a URL do repo pelo repositório onde você vai versionar a pasta k8s/
+# (pode ser o próprio task-systems, ou um repo separado tipo task-systems-manifests)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: task-systems
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/JoseEnioSegundo/task-systems.git
+    targetRevision: main
+    path: k8s
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: task-systems
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

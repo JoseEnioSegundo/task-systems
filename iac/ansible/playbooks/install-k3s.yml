@@ -1,0 +1,70 @@
+---
+# Instala o k3s: control-plane primeiro, gera o token,
+# depois os workers entram no cluster usando esse token.
+
+- name: Instalar k3s no control-plane
+  hosts: control_plane
+  become: true
+  tasks:
+    - name: Baixar e instalar k3s server
+      ansible.builtin.shell: |
+        curl -sfL https://get.k3s.io | sh -s - server \
+          --node-ip {{ private_ip }} \
+          --advertise-address {{ private_ip }} \
+          --write-kubeconfig-mode 644
+      args:
+        creates: /usr/local/bin/k3s
+
+    - name: Esperar o k3s subir
+      ansible.builtin.wait_for:
+        path: /var/lib/rancher/k3s/server/node-token
+        state: present
+        timeout: 120
+
+    - name: Ler o token de join do cluster
+      ansible.builtin.slurp:
+        src: /var/lib/rancher/k3s/server/node-token
+      register: k3s_token_raw
+
+    - name: Guardar o token para os workers usarem
+      ansible.builtin.set_fact:
+        k3s_token: "{{ k3s_token_raw.content | b64decode | trim }}"
+
+    - name: Copiar token para o control-plane (compartilhar entre plays)
+      ansible.builtin.copy:
+        content: "{{ k3s_token }}"
+        dest: /tmp/k3s_token
+        mode: "0644"
+
+- name: Instalar k3s nos workers e conectar ao cluster
+  hosts: workers
+  become: true
+  vars:
+    control_plane_ip: "{{ hostvars[groups['control_plane'][0]]['private_ip'] }}"
+  tasks:
+    - name: Buscar o token gerado no control-plane
+      ansible.builtin.slurp:
+        src: /tmp/k3s_token
+      delegate_to: "{{ groups['control_plane'][0] }}"
+      register: token_raw
+
+    - name: Instalar k3s agent
+      ansible.builtin.shell: |
+        curl -sfL https://get.k3s.io | K3S_URL=https://{{ control_plane_ip }}:6443 \
+          K3S_TOKEN={{ token_raw.content | b64decode | trim }} sh -s - agent \
+          --node-ip {{ private_ip }}
+      args:
+        creates: /usr/local/bin/k3s-agent
+
+- name: Verificação final do cluster
+  hosts: control_plane
+  become: true
+  tasks:
+    - name: Listar nós do cluster
+      ansible.builtin.command: k3s kubectl get nodes -o wide
+      register: nodes_output
+      changed_when: false
+
+    - name: Mostrar nós
+      ansible.builtin.debug:
+        var: nodes_output.stdout_lines

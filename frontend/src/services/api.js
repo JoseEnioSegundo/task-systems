@@ -1,8 +1,19 @@
+// Substitua o arquivo frontend/src/services/api.js por este.
+//
+// Antes o baseURL estava fixo em "http://127.0.0.1:8000/api/", o que só
+// funciona rodando tudo na sua máquina. Em produção (dentro do cluster,
+// atrás do Traefik) o frontend e o backend são acessados pelo MESMO host,
+// então a chamada deve ser relativa: "/api/". O Traefik cuida de rotear
+// pra dentro do Service certo.
+//
+// Em dev local (npm run dev) o Vite lê o .env.development e usa o backend
+// direto na porta 8000. Em build de produção (npm run build) o Vite lê o
+// .env.production e usa o caminho relativo.
 import axios from "axios";
 import { useAuthStore } from "@/stores/auth";
 
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8000/api/",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api/",
   timeout: 10000,
 });
 

@@ -274,3 +274,13 @@ node_modules
 
 # OS generated files
 Thumbs.db
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+iac/terraform/terraform.tfvars
+
+# Ansible
+iac/ansible/inventory/hosts.ini

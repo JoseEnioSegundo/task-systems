@@ -1,0 +1,15 @@
+---
+common_packages:
+  - curl
+  - vim
+  - htop
+  - net-tools
+  - ca-certificates
+  - apt-transport-https
+
+admin_user: devops
+admin_pubkey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILLIQiN7MdmTf7pYOwcAAl3umavbRXTe0hdRwWVT2wl jose@TJJose-Segundo"
+
+# Usado pelo playbook do k3s: IP privado do control-plane, preenchido
+# automaticamente a partir do inventário (hostvars).
+k3s_control_plane_host: "{{ hostvars[groups['control_plane'][0]]['private_ip'] }}"

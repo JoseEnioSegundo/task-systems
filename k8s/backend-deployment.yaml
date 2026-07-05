@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: task-systems
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: josesegundo/task-systems-backend:latest # troque pela sua imagem no Docker Hub
+          ports:
+            - containerPort: 8000
+          env:
+            - name: SECRET_KEY
+              value: "troque-por-uma-chave-secreta-forte-em-producao"
+            - name: DEBUG
+              value: "False"
+            - name: ALLOWED_HOSTS
+              value: "*"
+            - name: CORS_ALLOWED_ORIGINS
+              value: "http://SEU_IP_OU_DOMINIO"
+            - name: DB_ENGINE
+              value: "django.db.backends.postgresql"
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_DB
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: DB_HOST
+              value: "postgres"
+            - name: DB_PORT
+              value: "5432"
+          readinessProbe:
+            httpGet:
+              path: /swagger/
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10

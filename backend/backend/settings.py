@@ -1,3 +1,17 @@
+# Substitua backend/backend/settings.py inteiro por este arquivo.
+#
+# O que foi corrigido em relação ao original:
+# 1. INSTALLED_APPS estava declarado DUAS VEZES — a segunda sobrescrevia a
+#    primeira em Python, então rest_framework_simplejwt (+ token_blacklist),
+#    django_filters e drf_yasg NÃO estavam realmente instalados, apesar de
+#    aparecerem no arquivo. Mesclado em uma lista só agora.
+# 2. DATABASES agora lê do ambiente (SQLite continua sendo o padrão se você
+#    rodar sem nenhuma variável definida, então nada quebra em dev).
+# 3. Adicionado whitenoise no MIDDLEWARE + STATICFILES_STORAGE, pra servir
+#    o CSS do admin/Swagger corretamente com DEBUG=False.
+# 4. MIDDLEWARE original tinha CommonMiddleware duplicado e CorsMiddleware
+#    fora de ordem (precisa vir antes do CommonMiddleware) — corrigido.
+
 """
 Django settings for backend project.
 
@@ -48,25 +62,10 @@ INSTALLED_APPS = [
     "drf_yasg",
 ]
 
-
-# Application definition
-
-INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    "core",
-    "rest_framework",
-    "corsheaders",
-]
-
-MIDDLEWARE = [    
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
+MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -97,11 +96,17 @@ WSGI_APPLICATION = "backend.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+# Sem nenhuma variável de ambiente definida, cai de volta pro SQLite (dev).
+# No docker-compose e no Kubernetes, as variáveis DB_* apontam pro Postgres.
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": config("DB_ENGINE", default="django.db.backends.sqlite3"),
+        "NAME": config("DB_NAME", default=str(BASE_DIR / "db.sqlite3")),
+        "USER": config("DB_USER", default=""),
+        "PASSWORD": config("DB_PASSWORD", default=""),
+        "HOST": config("DB_HOST", default=""),
+        "PORT": config("DB_PORT", default=""),
     }
 }
 
@@ -141,6 +146,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # CORS settings
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='').split(',')

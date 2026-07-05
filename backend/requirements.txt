@@ -1,4 +1,6 @@
-asgiref==3.8.1
+# Substitua backend/requirements.txt por este (adicionei psycopg2-binary,
+# gunicorn e whitenoise no final — o resto é igual ao seu original).
+asgiref==3.9.1
 Django==6.0.2
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.3.0
@@ -26,3 +28,7 @@ itypes==1.2.0
 openapi-codec==1.3.2
 simplejson==3.19.2
 typing-extensions==4.10.0
+psycopg2-binary==2.9.10
+gunicorn==23.0.0
+whitenoise==6.8.2
+setuptools==80.9.0

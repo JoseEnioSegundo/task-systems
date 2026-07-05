@@ -1,0 +1,16 @@
+; Preencha com os IPs de `terraform output` (rode terraform apply antes)
+[control_plane]
+control-plane ansible_host=SEU_IP_PUBLICO_CP private_ip=SEU_IP_PRIVADO_CP
+
+[workers]
+worker-1 ansible_host=SEU_IP_PUBLICO_W1 private_ip=SEU_IP_PRIVADO_W1
+worker-2 ansible_host=SEU_IP_PUBLICO_W2 private_ip=SEU_IP_PRIVADO_W2
+
+[k8s_nodes:children]
+control_plane
+workers
+
+[all:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=~/.ssh/vockey.pem
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
