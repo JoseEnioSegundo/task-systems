@@ -22,6 +22,11 @@ spec:
       services:
         - name: backend
           port: 8000
+    - match: PathPrefix(`/static`)
+      kind: Rule
+      services:
+        - name: backend
+          port: 8000
     - match: PathPrefix(`/pgadmin`)
       kind: Rule
       services:
