@@ -17,6 +17,11 @@ spec:
       services:
         - name: backend
           port: 8000
+    - match: PathPrefix(`/admin`)
+      kind: Rule
+      services:
+        - name: backend
+          port: 8000
     - match: PathPrefix(`/swagger`) || PathPrefix(`/redoc`)
       kind: Rule
       services:
